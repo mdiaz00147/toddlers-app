@@ -1,10 +1,23 @@
 <template>
-  <v-container>
+  <v-container fluid>
+    <!-- <v-row>
+      <v-btn
+        class="text-white flex-grow-1 text-none"
+        color="blue-darken-4"
+        rounded="0"
+        variant="flat"
+        @click="_fetchItems()"
+      >
+        RUN
+      </v-btn>
+    </v-row> -->
+
     <v-row>
-      <v-col cols="6" md="4" v-for="(item, index) in items">
+      <v-col :cols="_buildColumn(item)" v-for="(item, index) in items">
         <div :class="item['cssClass']" :id="item['id']">
           <!-- <div class="mt-4 text-subtitle-2">With slots</div> -->
-
+          <!-- {{ itemsTouchedTwoTimes }}
+          {{ itemsTouchedThreeTimes }} -->
           <HomeCard :item="item"></HomeCard>
         </div>
       </v-col>
@@ -14,24 +27,37 @@
 
 <script lang="ts">
 import axios from "axios";
+import { mapGetters } from "vuex";
 
-import HomeCard from "./Card/";
+import HomeCard from "./Card/index.vue";
 
 export default {
   data() {
+    const items: any[] = [];
+    const itemsCols: any = {};
+
     return {
+      items,
+      itemsCols,
       count: 0,
-      items: [],
       page: 1,
       urlsFetched: new Set(),
       itemsViewed: new Set(),
     };
   },
+  computed: {
+    ...mapGetters({
+      itemsTouchedThreeTimes: "getItemsTouchedThreeTimes",
+      itemsTouchedTwoTimes: "getItemsTouchedTwoTimes",
+    }),
+  },
   components: {
-    HomeCard
+    HomeCard,
   },
   mounted() {
     this._fetchItems();
+
+    this.$store.dispatch("reset");
   },
   methods: {
     async _fetchItems() {
@@ -103,7 +129,7 @@ export default {
 
       return result;
     },
-    _scroll(elementClass) {
+    _scroll(elementClass: any) {
       window.onscroll = () => {
         let scrolledTo = document.querySelector("." + elementClass);
 
@@ -112,7 +138,7 @@ export default {
         }
       };
     },
-    _isScrolledIntoView(element) {
+    _isScrolledIntoView(element: any) {
       let rect = element.getBoundingClientRect();
       let elemTop = rect.top;
       let elemBottom = rect.bottom;
@@ -129,6 +155,19 @@ export default {
       }
 
       return isVisible;
+    },
+    _buildColumn(element: object) {
+      let result = 4;
+
+      if (this.itemsTouchedTwoTimes.includes(element["id"])) {
+        result = 12;
+      }
+
+      if (this.itemsTouchedThreeTimes.includes(element["id"])) {
+        result = 6;
+      }
+
+      return result;
     },
   },
 };

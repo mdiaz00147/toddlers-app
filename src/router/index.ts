@@ -5,7 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const LayoutDefault = () => import('@/layouts/default/Default.vue')
 
 // views
-import Home from '@/views/Home/';
+const Home = () => import('@/views/Home/index.vue')
 
 const routes = [
   {

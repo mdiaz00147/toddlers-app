@@ -1,15 +1,12 @@
 <template>
   <v-app class="disable-zoom">
-    <!-- <div  ref="container" @wheel.prevent="handleScroll"> -->
-
     <v-main>
       <router-view></router-view>
     </v-main>
-    <!-- </div> -->
   </v-app>
 </template>
 
-<style  lang="scss">
+<style lang="scss">
 *,
 *::after,
 *::before {
