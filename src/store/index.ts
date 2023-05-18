@@ -1,5 +1,5 @@
-import { createApp } from "vue";
-import { createStore } from "vuex";
+import { createApp, defineComponent } from "vue";
+import { createStore, Store } from "vuex";
 import VuexPersist from "vuex-persist";
 
 const vuexLocalStorage = new VuexPersist({
@@ -12,16 +12,32 @@ const vuexLocalStorage = new VuexPersist({
 });
 
 
+interface State {
+  loading: boolean;
+  itemsTouchedThreeTimes: any[]; // Replace 'any' with the appropriate type for your items
+  itemsTouchedTwoTimes: any[]; // Replace 'any' with the appropriate type for your items
+  containerHeight: number;
+}
+
+
+declare module '@vue/runtime-core' {
+  interface ComponentCustomProperties {
+    $store: Store<State>; // Replace 'State' with your actual state type
+  }
+}
+
 // Create a new store instance or import from module.
-const store = createStore({
+const store: Store<State> = createStore<State>({
   plugins: [vuexLocalStorage.plugin],
   state: {
     loading: false,
     itemsTouchedThreeTimes: [],
     itemsTouchedTwoTimes: [],
+    containerHeight: 0
   },
   mutations: {
     setLoading: (state, value) => state.loading = value,
+    setContainerHeight: (state, value) => state.containerHeight = value,
     setItemsTouchedTwoTimes: (state, value) => state.itemsTouchedTwoTimes = value,
     setItemsTouchedThreeTimes: (state, value) => state.itemsTouchedThreeTimes = value,
     addItemsTouchedTwoTimes: (state, value) => {
@@ -49,12 +65,14 @@ const store = createStore({
     getLoading: (state) => state.loading,
     getItemsTouchedThreeTimes: (state) => state.itemsTouchedThreeTimes,
     getItemsTouchedTwoTimes: (state) => state.itemsTouchedTwoTimes,
+    getContainerHeight: (state) => state.containerHeight,
   },
   actions: {
     reset({ commit }) {
       commit('setLoading', false)
       commit('setItemsTouchedThreeTimes', [])
       commit('setItemsTouchedTwoTimes', [])
+      commit('setContainerHeight', 0)
     }
   }
 });
