@@ -13,7 +13,7 @@
     </v-row> -->
 
     <v-row>
-      <v-col :cols="_buildColumn(item)" v-for="(item, index) in items">
+      <v-col :cols="_buildColumn(item)" v-for="(item, index) in itemsBuild">
         <div :class="item['cssClass']" :id="item['id']">
           <!-- <div class="mt-4 text-subtitle-2">With slots</div> -->
           <!-- {{ itemsTouchedTwoTimes }}
@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import axios from "axios";
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions, mapState } from "vuex";
 
 import HomeCard from "./Card/index.vue";
 
@@ -46,16 +46,23 @@ export default {
     };
   },
   computed: {
+    ...mapState(["moviesList"]),
+
     ...mapGetters({
       itemsTouchedThreeTimes: "getItemsTouchedThreeTimes",
       itemsTouchedTwoTimes: "getItemsTouchedTwoTimes",
+      moviesList: "getMoviesList",
     }),
+    itemsBuild() {
+      return this.items;
+    },
   },
   components: {
     HomeCard,
   },
   mounted() {
     this._fetchItems();
+    // this.buildMoviesListCache(this.page);
 
     this.$store.dispatch("reset");
 
@@ -77,10 +84,20 @@ export default {
     resizeObserver.observe(containerElement);
   },
   methods: {
+    ...mapActions([
+      "buildMoviesListCache", //also supports payload `this.nameOfAction(amount)`
+    ]),
     async _fetchItems() {
       const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=true&language=en-US&page=${this.page}&sort_by=popularity.desc&with_genres=16`;
+      const cacheKey = url;
+      const cacheCurrent = this.moviesList[cacheKey];
+      let resultsModified = [];
 
-      if (!this.urlsFetched.has(url)) {
+      // console.log("moviesList", this.moviesList[cacheKey]);
+      // if (!this.urlsFetched.has(url)) {
+      if (cacheCurrent) {
+        resultsModified = cacheCurrent;
+      } else {
         try {
           const response: any = await axios({
             method: "GET",
@@ -93,10 +110,10 @@ export default {
           });
 
           if (response && response.data) {
-            this.urlsFetched.add(url);
+            // this.urlsFetched.add(url);
             // console.log(this.urlsFetched);
             const results: any[] = response.data["results"];
-            const resultsModified = [];
+            // const resultsModified = [];
 
             for (let index = 0; index < results.length; index++) {
               const element = results[index];
@@ -112,49 +129,27 @@ export default {
               }
             }
 
-            for (let index = 0; index < resultsModified.length; index++) {
-              const element = resultsModified[index];
-              const isLast = resultsModified.length - 1 === index;
-              const elementCssClass = isLast ? `item-last-${element["id"]}` : "";
-
-              element["cssClass"] = elementCssClass;
-
-              if (isLast) {
-                this._scroll(elementCssClass);
-              }
-            }
-
-            this.items = [...this.items, ...resultsModified];
+            this.buildMoviesListCache({ cacheKey: cacheKey, items: resultsModified });
           }
         } catch (error) {
           console.log(error);
         }
+        // }
       }
-    },
-    async _fetchItemImages(id: number | string) {
-      return "";
 
-      let result: any;
+      for (let index = 0; index < resultsModified.length; index++) {
+        const element = resultsModified[index];
+        const isLast = resultsModified.length - 1 === index;
+        const elementCssClass = isLast ? `item-last-${element["id"]}` : "";
 
-      try {
-        const response: any = await axios({
-          method: "GET",
-          url: `https://api.themoviedb.org/3/movie/${id}/images`,
-          headers: {
-            accept: "application/json",
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhZmM1NDFlM2I2ZTc1MzlhMzJkZWMyZDg2NGQxNTQ2ZCIsInN1YiI6IjVhMDRlMjhhOTI1MTQxNDAyZDAwMzZkMCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.2vjszr39ldIXsE9oC1UVXfMdahG2AdGVF73YDvisK9k",
-          },
-        });
+        element["cssClass"] = elementCssClass;
 
-        if (response && response.data) {
-          result = response.data;
+        if (isLast) {
+          this._scroll(elementCssClass);
         }
-      } catch (error) {
-        console.log(error);
       }
 
-      return result;
+      this.items = [...this.items, ...resultsModified];
     },
     async _fetchItemVideos(id: number | string): Promise<any[]> {
       // return "";
@@ -201,13 +196,14 @@ export default {
 
       let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
 
-      // console.log(element);
+      // console.log(element.id, isVisible);
 
       if (isVisible && !this.itemsViewed.has(element["id"])) {
         this.page += 1;
         this.itemsViewed.add(element["id"]);
 
         this._fetchItems();
+        // this.buildMoviesListCache(this.page);
       }
 
       return isVisible;
