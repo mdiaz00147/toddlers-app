@@ -1,6 +1,7 @@
 import { createApp, defineComponent } from "vue";
 import { createStore, Store } from "vuex";
 import VuexPersist from "vuex-persist";
+import axios from "axios";
 
 const vuexLocalStorage = new VuexPersist({
   key: "vuex", // The key to store the state on in the storage provider.
@@ -17,6 +18,7 @@ interface State {
   itemsTouchedThreeTimes: any[]; // Replace 'any' with the appropriate type for your items
   itemsTouchedTwoTimes: any[]; // Replace 'any' with the appropriate type for your items
   containerHeight: number;
+  moviesList: {},
 }
 
 
@@ -33,7 +35,8 @@ const store: Store<State> = createStore<State>({
     loading: false,
     itemsTouchedThreeTimes: [],
     itemsTouchedTwoTimes: [],
-    containerHeight: 0
+    containerHeight: 0,
+    moviesList: {},
   },
   mutations: {
     setLoading: (state, value) => state.loading = value,
@@ -60,12 +63,15 @@ const store: Store<State> = createStore<State>({
         state.itemsTouchedTwoTimes.splice(itemIndex, 1);
       }
     },
+    addMoviesList: (state, { key, value }) => state.moviesList = { ...state.moviesList, ...{ [key]: value } },
+    setMoviesList: (state, value) => state.moviesList = value,
   },
   getters: {
     getLoading: (state) => state.loading,
     getItemsTouchedThreeTimes: (state) => state.itemsTouchedThreeTimes,
     getItemsTouchedTwoTimes: (state) => state.itemsTouchedTwoTimes,
     getContainerHeight: (state) => state.containerHeight,
+    getMoviesList: (state) => state.moviesList,
   },
   actions: {
     reset({ commit }) {
@@ -73,7 +79,18 @@ const store: Store<State> = createStore<State>({
       commit('setItemsTouchedThreeTimes', [])
       commit('setItemsTouchedTwoTimes', [])
       commit('setContainerHeight', 0)
-    }
+      // commit('setMoviesList', {})
+    },
+    buildMoviesListCache({ commit, dispatch, getters }, data) {
+      // console.log(data);
+
+      commit('addMoviesList', { key: data.cacheKey, value: data.items });
+      // dispatch('_fetchItems')
+      console.log('--------------------------------');
+
+      // console.log(getters.getMoviesList);
+
+    },
   }
 });
 
